@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Status Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --primary-color: #1e1e2f;
+      --accent-color: #facc15;
+      --background: #f9fafb;
+      --card-bg: #ffffff;
+      --text-color: #1f2937;
+    }
+
+    /* Loader styles */
+    .loader {
+      display: none;
+      width: 48px;
+      height: 48px;
+      border: 5px solid var(--primary-color);
+      border-bottom-color: transparent;
+      border-radius: 50%;
+      margin: 20px auto;
+      animation: rotation 1s linear infinite;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1000;
+    }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(4px);
+      z-index: 999;
+    }
+
+    .overlay.active {
+      display: block;
+    }
+
+    .loader.active {
+      display: block;
+    }
+
+    .form-disabled {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    @keyframes rotation {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--background);
+      margin: 0;
+      padding: 0;
+      color: var(--text-color);
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    h2, h3 {
+      text-align: center;
+      color: var(--primary-color);
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    input, select {
+      padding: 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--accent-color);
+    }
+
+    button {
+      background-color: var(--primary-color);
+      color: #fff;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background-color: #111827;
+    }
+
+    table {
+      width: 100%;
+      margin-top: 30px;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      border: 1px solid #e5e7eb;
+      padding: 12px;
+      text-align: left;
+    }
+
+    th {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f3f4f6;
+    }
+
+    @media (max-width: 600px) {
+      .form-group {
+        flex-direction: column;
+      }
+    }
+    .error{
+        color: red;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="overlay" id="overlay"></div>
+    <h2>👤 Update Your Status</h2>
+    <div class="form-group">
+      <label for="name">Your Name</label>
+      <input type="text" id="name" placeholder="Enter your name" required />
+    </div>
+
+    <div class="form-group">
+      <label for="status">Select Status</label>
+      <select id="status">
+        <option>I need work</option>
+        <option>I need help</option>
+        <option>I'm good</option>
+        <option>I can do more If necessary.</option>
+      </select>
+    </div>
+
+    <input type="hidden" id="date">
+
+    <button class="btn-submit" onclick="submitStatus()">✅ Submit Status</button>
+
+    <div class="loader" id="loader"></div>
+    <!-- <h3>📋 Live Status Dashboard</h3>
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Status</th></tr>
+      </thead>
+      <tbody id="statusTableBody"></tbody>
+    </table> -->
+  </div>
+
+  <!-- jquery -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbwJwX1631IJumoCJlhLQJevEyWMs9cke_JfQ8piHu5g-GgosvQFYHIEHpPrwEAZJCKW-w/exec'; // Replace with actual deployed script URL
+    $(document).ready(function() {
+        $('#date').val(new Date().toLocaleDateString());
+
+        const loader = document.getElementById('loader');
+        const overlay = document.getElementById('overlay');
+        const container = document.querySelector('.container');
+        
+        loader.classList.add('active');
+        overlay.classList.add('active');
+        container.classList.add('form-disabled');
+        
+        $.get(scriptURL, function(response) {
+            
+            var dropdown = response.dropdown;
+            $('#status').empty()
+            $('#status').append('<option value="" selected disabled>Select Status</option>')
+            for(var i = 0; i < dropdown.length; i++) {
+                $('#status').append(`<option value="${dropdown[i]}">${dropdown[i]}</option>`);
+            }
+            loader.classList.remove('active');
+            overlay.classList.remove('active');
+            container.classList.remove('form-disabled');
+        }).fail(function(error) {
+            console.error('Error fetching data:', error);
+            loader.classList.remove('active');
+            overlay.classList.remove('active');
+            container.classList.remove('form-disabled');
+        });
+    });
+
+    function validateForm() {
+        var flag = true;
+        const name = $('#name').val().trim();
+        const status = $('#status').val();
+        $('.error').remove();
+        if (!name) {
+            flag = false;
+            $('#name').closest('.form-group').append('<span class="error">Name is required</span>');
+        }
+        if (!status) {
+            flag = false;
+            $('#status').closest('.form-group').append('<span class="error">Status is required</span>');
+        }
+        return flag;
+    }
+
+    async function submitStatus() {
+        if (!validateForm()) return;
+        
+        var name = $('#name').val();
+        var status = $('#status').val();
+        var date = $('#date').val();
+
+        $('.btn-submit').attr('disabled', 'disabled');
+        $('.btn-submit').text('Please wait...');
+
+        $.ajax({
+            type:"POST",
+            url: scriptURL,
+            data: {
+                name: name,
+                status: status,
+                date: date
+            },
+            success: function(response){
+                if(response.result == "success"){
+                    Swal.fire({
+                        title: "Good job!",
+                        text: "Thank you for your submission.",
+                        icon: "success",
+                    }).then(function() {
+                        window.location = window.location.href;
+                    });
+                    setTimeout(function(){
+                        window.location = window.location.href;
+                    }, 2000);
+                }
+                else if(response.result == "not exist"){
+                    Swal.fire({
+                        title: "Error!",
+                        text: "User not found",
+                        icon: "error",
+                    });
+                    setTimeout(function(){
+                        window.location = window.location.href;
+                    }, 2000);
+                }
+            },
+            error: function(response){
+            Swal.fire({
+                title: "Error!",
+                text: "Something went wrong",
+                icon: "error",
+            }).then(function() {
+                $('.btn-submit').removeAttr('disabled');
+                $('.btn-submit').text('Submit Again');
+            });
+            }
+        });
+    }
+  </script>
+</body>
+</html>
